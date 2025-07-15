@@ -9,7 +9,7 @@
   <div class="flex h-[550px] text-sm border rounded-x1 shadow overflow-hidden bg-black">
     <!-- User List -->
     <aside class="w-1/4 border-r bg-gray-50 flex flex-col">
-      <div class="p-4 font-semibold text-gray-700 border-b text-base">CUSTOMER</div>
+      <div class="p-4 font-semibold text-gray-700 border-b text-base">CUSTOMERS</div>
       <div class="flex-1 overflow-y-auto divide-y">
         <ul>
           @foreach ($users as $user)
