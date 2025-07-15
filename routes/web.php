@@ -21,5 +21,5 @@ Route::get('/', function () {
 use App\Http\Controllers\SupplyController;
 
 Route::resource('supplies', SupplyController::class); 
-Route::resource('supplies', SupplyController::class); 
+
 

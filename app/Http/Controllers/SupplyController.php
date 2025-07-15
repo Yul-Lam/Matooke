@@ -32,12 +32,34 @@ class SupplyController extends Controller
         'supplier_id' => 'required|exists:suppliers,id',
         'coffee_id' => 'required|exists:coffees,id',
         'quantity' => 'required|numeric',
-        'supplied_on' => 'required|date'
+        'supply_date' => 'required|date'
     ]);
 
     \App\Models\Supply::create($request->all());
 
     return redirect()->route('supplies.index')->with('success', 'Supply added successfully!');
 }
-    }
+    public function edit($id)
+{
+    $supply = Supply::findOrFail($id);
+    $suppliers = Supplier::all();
+    $coffees = Coffee::all();
+    
+    return view('supplies.edit', compact('supply', 'suppliers', 'coffees'));
+}
 
+public function update(Request $request, $id)
+{
+    $request->validate([
+        'supplier_id' => 'required|exists:suppliers,id',
+        'coffee_id' => 'required|exists:coffees,id',
+        'quantity' => 'required|integer|min:1',
+        'supply_date' => 'required|date',
+    ]);
+
+    $supply = Supply::findOrFail($id);
+    $supply->update($request->all());
+
+    return redirect()->route('supplies.index')->with('success', 'Supply updated successfully!');
+}
+}
