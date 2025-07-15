@@ -49,8 +49,16 @@
                                         <td>{{ $supply->quantity }}</td>
                                         <td>{{ $supply->supply_date }}</td>
                                         <td>
-                                            <a href="#" class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i> Edit</a>
-                                            <a href="#" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i> Delete</a>
+                                            <a href="{{ route('supplies.edit', $supply->id) }}" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-pencil"></i> Edit
+                                            </a>
+                                            <form action="{{ route('supplies.destroy', $supply->id) }}" method="POST" style="display:inline-block;">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this supply?')">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 @endforeach
