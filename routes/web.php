@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+<<<<<<< HEAD
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
@@ -39,3 +40,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ✅ Optional: Grade View
     Route::get('/grades/{grade}', [CoffeeGradeController::class, 'show'])->name('grades.show');
 });
+=======
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
+*/
+
+
+Route::get('/', function () {
+    return view('home');
+});
+
+use App\Http\Controllers\SupplyController;
+
+Route::resource('supplies', SupplyController::class); 
+
+
+>>>>>>> 1b843c810ec3fd48d1bd3bcd733da4568b6c576f
