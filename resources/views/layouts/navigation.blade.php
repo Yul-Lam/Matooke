@@ -19,9 +19,11 @@
                             {{ Auth::user()->name }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li>
-                                <a class="dropdown-item" href="{{ route('profile.edit') }}">Profile</a>
-                            </li>
+                            <a class="dropdown-item" href="{{ route('profile') }}">👤 Profile</a>
+<a class="dropdown-item" href="{{ route('profile.edit') }}">✏️ Edit Profile</a>
+<a class="dropdown-item" href="{{ route('profile.security') }}">🔐 Security</a>
+
+
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf

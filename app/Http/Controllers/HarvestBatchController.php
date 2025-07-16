@@ -1,204 +1,192 @@
 <?php
 
-
 namespace App\Http\Controllers;
 
 use App\Models\HarvestBatch;
-use App\Exports\HarvestBatchesExport;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Bus;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Farm;
 use App\Models\CoffeeGrade;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
-
+use Illuminate\Support\Facades\Redirect;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\HarvestBatchesExport;
+use App\Models\InventoryLocation;
+use App\Models\InventoryTransaction;
 
 class HarvestBatchController extends Controller
 {
+    /**
+     * Export all batches to Excel
+     */
     public function export()
     {
         return Excel::download(new HarvestBatchesExport, 'harvest_batches.xlsx');
     }
+
     /**
-     * Display a listing of the resource.
+     * List harvest batches + filters
      */
-    
-public function index(Request $request)
-{
-    $query = \App\Models\HarvestBatch::with(['farm', 'coffeeGrade']);
+    public function index(Request $request)
+    {
+        $query = HarvestBatch::with(['farm', 'coffeeGrade']);
 
-    // Search
-    if ($request->filled('search')) {
-        $search = $request->search;
-        $query->whereHas('farm', fn($q) => $q->where('name', 'like', "%$search%"))
-              ->orWhereHas('coffeeGrade', fn($q) => $q->where('name', 'like', "%$search%"));
+        if ($request->filled('search')) {
+            $query->whereHas('farm', fn($q) => $q->where('name', 'like', "%{$request->search}%"))
+                  ->orWhereHas('coffeeGrade', fn($q) => $q->where('name', 'like', "%{$request->search}%"));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $query->orderBy($request->get('sort', 'id'), $request->get('direction', 'desc'));
+
+        $harvestBatches = $query->paginate(10);
+
+        $stats = [
+            'total' => HarvestBatch::count(),
+            'in_storage' => HarvestBatch::where('status', 'in_storage')->count(),
+            'shipped' => HarvestBatch::where('status', 'shipped')->count(),
+            'total_quantity' => HarvestBatch::sum('quantity_kg'),
+        ];
+
+        return view('coffee-inventory.index', compact('harvestBatches', 'stats'));
     }
-
-    // Filter by status
-    if ($request->filled('status')) {
-        $query->where('status', $request->status);
-    }
-
-    // Sorting
-    $sort = $request->get('sort', 'id');
-    $direction = $request->get('direction', 'desc');
-    $query->orderBy($sort, $direction);
-
-    $harvestBatches = $query->paginate(10);
-
-    // Stats for dashboard
-    $stats = [
-        'total' => \App\Models\HarvestBatch::count(),
-        'in_storage' => \App\Models\HarvestBatch::where('status', 'in_storage')->count(),
-        'shipped' => \App\Models\HarvestBatch::where('status', 'shipped')->count(),
-        'total_quantity' => \App\Models\HarvestBatch::sum('quantity_kg'),
-    ];
-
-    return view('coffee-inventory.index', compact('harvestBatches', 'stats'));
-}
 
     /**
-     * Show the form for creating a new resource.
+     * Show create form
      */
     public function create()
     {
-        
-        return view('harvest-batches.create');
+        $farms = Farm::all();
+        $grades = CoffeeGrade::all();
+
+        return view('harvest-batches.create', compact('farms', 'grades'));
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store new batch
      */
     public function store(Request $request)
     {
-    // Example: create a batch of jobs (adjust jobs as needed)
-        $batch = Bus::batch([
-            new \App\Jobs\HarvestJob1(),
-            new \App\Jobs\HarvestJob2(),
-            // add your jobs here
-        ])->name('Harvest Batch')->dispatch();
+        $validated = $request->validate([
+            'farm_id' => 'required|exists:farms,id',
+            'coffee_grade_id' => 'required|exists:coffee_grades,id',
+            'harvest_date' => 'required|date',
+            'quantity_kg' => 'required|integer',
+            'status' => 'required|string',
+            'processing_method' => 'required|string',
+        ]);
 
-     
-// Create inventory transaction...
-return redirect()->route('harvest-batches.show', $batch->id)
-                 ->with('success', 'Harvest batch recorded successfully');
+        $batch = HarvestBatch::create($validated);
 
+        InventoryTransaction::create([
+            'harvest_batch_id' => $batch->id,
+            'to_location_id' => InventoryLocation::where('type', 'storage')->value('id'),
+            'quantity_kg' => $batch->quantity_kg,
+            'transaction_type' => 'intake',
+            'notes' => 'Initial harvest intake',
+        ]);
 
-    $validated = $request->validate([
-        
-    'farm_id' => 'required|exists:farms,id',
-    'coffee_grade_id' => 'required|exists:coffee_grades,id',
-    'harvest_date' => 'required|date',
-    'quantity_kg' => 'required|integer',
-    'status' => 'required|string',
-    'processing_method' => 'required|string'
-
-    ]);
-
-    $batch = HarvestBatch::create($validated);
-
-    // Create initial inventory transaction
-    InventoryTransaction::create([
-        'harvest_batch_id' => $batch->id,
-        'to_location_id' => InventoryLocation::where('type', 'storage')->first()->id,
-        'quantity_kg' => $batch->quantity_kg,
-        'transaction_type' => 'intake',
-        'notes' => 'Initial harvest intake',
-    ]);
-
-    return redirect()->route('harvest-batches.show', $batch->id)
-        ->with('success', 'Harvest batch recorded successfully');
-}
-    
+        return redirect()->route('harvest-batches.show', $batch->id)
+                         ->with('success', 'Harvest batch recorded successfully');
+    }
 
     /**
-     * Display the specified resource.
+     * Show single batch
      */
     public function show(string $id)
     {
-        $batch = HarvestBatch::findOrFail($id);
-    return view('harvest-batches.show', compact('batch'));
-
+        $batch = HarvestBatch::with(['farm', 'coffeeGrade'])->findOrFail($id);
+        return view('harvest-batches.show', compact('batch'));
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show edit form
      */
     public function edit(string $id)
     {
-       $batch = HarvestBatch::findOrFail($id);
-    $farms = Farm::all();
-    $grades = CoffeeGrade::all();
+        $batch = HarvestBatch::findOrFail($id);
+        $farms = Farm::all();
+        $grades = CoffeeGrade::all();
 
-    return view('harvest-batches.edit', compact('batch', 'farms', 'grades'));
+        return view('harvest-batches.edit', compact('batch', 'farms', 'grades'));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update batch
      */
     public function update(Request $request, string $id)
     {
         $batch = HarvestBatch::findOrFail($id);
-    $batch->update($request->all());
-    return redirect()->route('harvest-batches.index')->with('success', 'Batch updated successfully'); 
-    return redirect()->route('dashboard')->with('success', 'Batch updated successfully!');
 
+        $validated = $request->validate([
+            'farm_id' => 'required|exists:farms,id',
+            'coffee_grade_id' => 'required|exists:coffee_grades,id',
+            'harvest_date' => 'required|date',
+            'quantity_kg' => 'required|integer',
+            'status' => 'required|string',
+            'processing_method' => 'required|string',
+        ]);
+
+        $batch->update($validated);
+
+        return redirect()->route('harvest-batches.index')
+                         ->with('success', 'Batch updated successfully');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete batch
      */
     public function destroy(string $id)
     {
         $batch = HarvestBatch::findOrFail($id);
-    $batch->delete();
-    return redirect()->route('harvest-batches.index')->with('success', 'Batch deleted successfully'); 
+        $batch->delete();
+
+        return redirect()->route('harvest-batches.index')
+                         ->with('success', 'Batch deleted successfully');
     }
-    
 
-public function dashboard()
-{
-    $harvestBatches = HarvestBatch::with('coffeeGrade')->get(); // eager-load related coffee grade
-    return view('dashboard', compact('harvestBatches'));
-}
+    /**
+     * Dashboard view
+     */
+    public function dashboard()
+    {
+        $harvestBatches = HarvestBatch::with('coffeeGrade')->get();
+        return view('dashboard', compact('harvestBatches'));
+    }
 
+    /**
+     * Analytics view
+     */
+    public function analytics()
+    {
+        $totalBatches = HarvestBatch::count();
+        $totalQuantity = HarvestBatch::sum('quantity_kg');
 
+        $statusCounts = HarvestBatch::select('status', DB::raw('COUNT(*) as count'))
+                                    ->groupBy('status')->get();
 
-public function analytics()
-{
-    $totalBatches = HarvestBatch::count();
-    $totalQuantity = HarvestBatch::sum('quantity_kg');
+        $monthlyHarvests = HarvestBatch::selectRaw('DATE_FORMAT(harvest_date, "%M %Y") as month, COUNT(*) as count')
+                                       ->groupBy('month')
+                                       ->orderByRaw('MIN(harvest_date)')
+                                       ->get();
 
-    $statusCounts = HarvestBatch::select('status', DB::raw('COUNT(*) as count'))
-        ->groupBy('status')
-        ->get();
+        $farmPerformance = HarvestBatch::select('farm_id', DB::raw('SUM(quantity_kg) as total_kg'))
+                                       ->groupBy('farm_id')
+                                       ->with('farm')->get();
 
-    $monthlyHarvests = HarvestBatch::selectRaw('DATE_FORMAT(harvest_date, "%M %Y") as month, COUNT(*) as count')
-        ->groupBy('month')
-        ->orderByRaw('MIN(harvest_date)')
-        ->get();
+        $gradeDistribution = HarvestBatch::select('coffee_grade_id', DB::raw('COUNT(*) as count'))
+                                         ->groupBy('coffee_grade_id')
+                                         ->with('coffeeGrade')->get();
 
-    $farmPerformance = HarvestBatch::select('farm_id', DB::raw('SUM(quantity_kg) as total_kg'))
-        ->groupBy('farm_id')
-        ->with('farm')
-        ->get();
-
-    $gradeDistribution = HarvestBatch::select('coffee_grade_id', DB::raw('COUNT(*) as count'))
-        ->groupBy('coffee_grade_id')
-        ->with('coffeeGrade')
-        ->get();
-
-    return view('analytics.index', compact(
-        'totalBatches',
-        'totalQuantity',
-        'statusCounts',
-        'monthlyHarvests',
-        'farmPerformance',
-        'gradeDistribution'
-    ));
-}
-
-
-
+        return view('analytics.index', compact(
+            'totalBatches',
+            'totalQuantity',
+            'statusCounts',
+            'monthlyHarvests',
+            'farmPerformance',
+            'gradeDistribution'
+        ));
+    }
 }

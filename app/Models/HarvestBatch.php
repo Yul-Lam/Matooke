@@ -24,6 +24,7 @@ class HarvestBatch extends Model
         'status',
         'processing_method',
         'image'
+        
     ];
 
     public function farm()

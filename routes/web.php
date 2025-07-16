@@ -1,92 +1,41 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-
-use App\Models\HarvestBatch;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\HarvestBatchController;
+use App\Http\Controllers\FarmController;
+use App\Http\Controllers\CoffeeGradeController;
 
+// Home page (if needed)
+Route::get('/', function () {
+    return view('welcome');
+});
 
+// Auth routes (optional if using Laravel Breeze or Jetstream)
+Auth::routes();
 
-Route::get('/analytics', [HarvestBatchController::class, 'analytics'])->name('analytics');
-
-
-
-
-
-Route::get('/dashboard', function () {
-    $user = auth()->user();
-    $harvestBatches = \App\Models\HarvestBatch::with('coffeeGrade')->get();
-    $stats = [
-        'total' => \App\Models\HarvestBatch::count(),
-        'in_storage' => \App\Models\HarvestBatch::where('status', 'in_storage')->count(),
-        'shipped' => \App\Models\HarvestBatch::where('status', 'shipped')->count(),
-        'total_quantity' => \App\Models\HarvestBatch::sum('quantity_kg'),
-    ];
-
-    switch ($user->role) {
-        case 'admin':
-            return view('dashboards.admin', compact('harvestBatches', 'stats'));
-
-        case 'cooperative':
-            return view('dashboards.cooperative', compact('harvestBatches', 'stats'));
-
-            case 'wholesaler':
-                $harvestBatches = \App\Models\HarvestBatch::where('status', 'shipped')->get();
-    $stats = [
-        'total' => $harvestBatches->count(),
-        'total_quantity' => $harvestBatches->sum('quantity_kg'),];
-    return view('dashboards.wholesaler', compact('harvestBatches', 'stats'));
-
-case 'retailer':
-    $receivedBatches = \App\Models\Batch::where('retailer_id', $user->id)->get();
-    $stats = [
-        'total' => $receivedBatches->where('status', 'received')->count(),
-        'total_quantity' => $receivedBatches->sum('quantity_kg'),
-    ];
-    return view('dashboards.retailer', compact('receivedBatches', 'stats'));
-
+// Protected routes (must be logged in and verified)
+Route::middleware(['auth', 'verified'])->group(function () {
     
-        // other roles...
-    }
-})->middleware(['auth', 'verified'])->name('dashboard');
+    // ✅ Cooperative Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
 
-Route::middleware(['auth'])->group(function () {
-    Route::resource('harvest-batches', HarvestBatchController::class);
-    Route::get('harvest-batches-export', [HarvestBatchController::class, 'export'])->name('harvest-batches.export');
-});
-
-
-
-Route::resource('harvest-batches', HarvestBatchController::class);
-
-
-
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // ✅ Profile Routes
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/security', [ProfileController::class, 'security'])->name('profile.security');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // ✅ Harvest Batch Routes
+    Route::resource('harvest-batches', HarvestBatchController::class);
+
+    // ✅ Optional: Farm Profiles
+    Route::get('/farms/{farm}', [FarmController::class, 'show'])->name('farms.show');
+
+    // ✅ Optional: Grade View
+    Route::get('/grades/{grade}', [CoffeeGradeController::class, 'show'])->name('grades.show');
 });
-
-require __DIR__.'/auth.php';
-Route::get('/harvest-batches/{id}', [BatchController::class, 'show'])->name('harvest-batches.show'); // View
-Route::get('/harvest-batches/{id}/edit', [BatchController::class, 'edit'])->name('harvest-batches.edit'); // Edit
-Route::put('/harvest-batches/{id}', [BatchController::class, 'update'])->name('harvest-batches.update'); // Update (form submission)
-Route::delete('/harvest-batches/{id}', [BatchController::class, 'destroy'])->name('harvest-batches.destroy'); // Delete
-
-
-Route::post('/harvest-batches', [HarvestBatchController::class, 'store'])->name('harvest-batches.store');
-
-
-Route::post('/harvest-batches', [HarvestBatchController::class, 'store'])->name('harvest-batches.store');
-Route::get('/harvest-batches/{id}', [HarvestBatchController::class, 'show'])->name('harvest-batches.show');
-Route::get('/harvest-batches/{id}/edit', [HarvestBatchController::class, 'edit'])->name('harvest-batches.edit');
-use App\Http\Controllers\RetailerDashboardController;
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('/retailer/dashboard', [RetailerDashboardController::class, 'index'])->name('retailer.dashboard');
-});
-Route::get('/profile', function () {
-    return view('profile');
-})->name('profile');
-

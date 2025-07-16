@@ -3,7 +3,7 @@
 @section('content')
 <div class="container py-5">
     <h2 class="mb-4 fw-bold text-primary">Welcome back, {{ auth()->user()->name }}</h2>
-    <p class="mb-3 text-muted">Your Admin inventory Dashboard Overview</p>
+    <p class="mb-3 text-muted"><b>YOUR ADMIN INVENTORY DASHBOARD OVERVIEW</b></p>
 
     <form method="GET" action="{{ route('dashboard') }}" class="mb-4 d-flex" role="search">
         <input type="text" name="search" class="form-control me-2" value="{{ request('search') }}" placeholder="Search farm, grade, or status">
@@ -99,27 +99,15 @@
                 </tr>
             @endforelse
         </tbody>
-        @php
-    $statusIcon = match(strtolower($batch->status)) {
-        'shipped' => '🚚',
-        'in_storage' => '📦',
-        'pending' => '⏳',
-        'rejected' => '❌',
-        default => '📁'
-    };
-@endphp
-<span class="badge {{ $badgeClass }}">
-    {!! $statusIcon !!} {{ ucfirst($batch->status) }}
-</span>
+        
+    
     </table>
 </div>
 
 
 
-<th>
-    Farm
-    <i class="bi bi-arrow-up-short"></i>
-</th>
+
+
 
 
 @endsection

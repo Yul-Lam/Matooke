@@ -27,3 +27,36 @@
         </div>
     </div>
 </x-app-layout>
+@extends('layouts.app')
+
+@section('content')
+<div class="container py-4">
+    <h2 class="fw-bold text-primary">Edit Your Profile</h2>
+    <p>This page is under construction — but now it works 🎉</p>
+</div>
+
+
+
+<div class="container py-5">
+    <h2 class="fw-bold mb-4 text-success">✏️ Edit Profile</h2>
+
+    <form method="POST" action="{{ route('profile.update') }}">
+        @csrf
+        @method('PUT')
+
+        <div class="mb-3">
+            <label>Name</label>
+            <input type="text" name="name" value="{{ auth()->user()->name }}" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label>Email</label>
+            <input type="email" name="email" value="{{ auth()->user()->email }}" class="form-control">
+        </div>
+
+        <button type="submit" class="btn btn-outline-primary">Save Changes</button>
+    </form>
+</div>
+@endsection
+
+

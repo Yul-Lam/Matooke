@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
+<a class="dropdown-item" href="{{ route('profile') }}">Profile</a>
+
 <div class="container py-5">
     <h2 class="mb-4 fw-bold text-success">👤 Profile Overview</h2>
 
