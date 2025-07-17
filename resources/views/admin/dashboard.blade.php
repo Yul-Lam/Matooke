@@ -88,6 +88,12 @@
         </div>
     </div>
 </div>
+
+<div class="mb-4">
+    <a href="{{ route('admin.export.orders') }}" class="btn btn-success">
+        📥 Download All Orders CSV
+    </a>
+</div>
 @endsection
 
 @section('scripts')

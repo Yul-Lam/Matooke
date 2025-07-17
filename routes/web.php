@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 
+use App\Http\Controllers\Admin\ExportController;
+
 // ✅ Retailer Controllers (CORRECT NAMESPACE)
 use App\Http\Controllers\Retailer\RetailerProductController;
 use App\Http\Controllers\Retailer\CartController as RetailerCartController;
@@ -111,7 +113,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::post('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.updateStatus');
     Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
+
+    Route::get('/export-orders', [ExportController::class, 'exportOrderData'])->name('admin.export.orders');
+
 });
+Route::get('/admin/export-orders', [ExportController::class, 'exportOrderData'])->name('admin.export.orders');
 
 
 // ✅ CUSTOMER ROUTES
