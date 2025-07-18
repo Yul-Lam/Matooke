@@ -9,7 +9,11 @@ class Supply extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['supplier_id', 'coffee_id', 'quantity', 'supply_date'];
+    protected $fillable = ['supplier_id', 'coffee_id', 'quantity', 'supply_date']; // ✅ Updated field
+
+    protected $casts = [
+        'supply_date' => 'date', // ✅ Updated cast
+    ];
 
     public function supplier()
     {
