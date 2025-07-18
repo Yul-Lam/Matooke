@@ -47,12 +47,6 @@
                         <input type="date" name="supply_date" class="form-control" required>
                     </div>
 
-                    {{-- Supplied On Input --}}
-                    <div class="mb-3">
-                        <label class="form-label">Supplied On:</label>
-                        <input type="text" name="supplied_on" class="form-control" placeholder="e.g. 15/07/2025" required>
-                    </div>
-
                     {{-- Submit Button --}}
                     <div class="d-grid">
                         <button type="submit" class="btn btn-success">
