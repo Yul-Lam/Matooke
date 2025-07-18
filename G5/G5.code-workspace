@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "g5-project",
+			"path": "../g5-project"
+		}
+	],
+	"settings": {}
+}
