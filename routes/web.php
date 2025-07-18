@@ -1,41 +1,40 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Password;
 use App\Http\Controllers\HarvestBatchController;
-use App\Http\Controllers\FarmController;
-use App\Http\Controllers\CoffeeGradeController;
+use App\Models\HarvestBatch;
 
-// Home page (if needed)
+
+
+Route::resource('harvest-batches', HarvestBatchController::class);
+Route::get('/dashboard', function () {
+    $harvestBatches = HarvestBatch::with('coffeeGrade')->get();
+    return view('dashboard', compact('harvestBatches'));
+});
+
+
+
+// Show login page
+
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/admin-dashboard');
 });
 
-// Auth routes (optional if using Laravel Breeze or Jetstream)
-Auth::routes();
+// Handle login form submission
+Route::post('/login', [LoginController::class, 'login'])->name('login');
 
-// Protected routes (must be logged in and verified)
-Route::middleware(['auth', 'verified'])->group(function () {
-    
-    // ✅ Cooperative Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
 
-    // ✅ Profile Routes
-    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
-    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::get('/profile/security', [ProfileController::class, 'security'])->name('profile.security');
-    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // ✅ Harvest Batch Routes
-    Route::resource('harvest-batches', HarvestBatchController::class);
+// Logout route
+Route::post('/logout', function () {
+    Auth::logout();
+    return redirect('/');
+})->name('logout');
 
-    // ✅ Optional: Farm Profiles
-    Route::get('/farms/{farm}', [FarmController::class, 'show'])->name('farms.show');
 
-    // ✅ Optional: Grade View
-    Route::get('/grades/{grade}', [CoffeeGradeController::class, 'show'])->name('grades.show');
-});
+Route::get('/forgot-password', function () {
+    return view('auth.forgot-password'); // Create this view if needed
+})->name('password.request');

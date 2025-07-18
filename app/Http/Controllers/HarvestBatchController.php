@@ -5,16 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\HarvestBatch;
 use App\Models\Farm;
 use App\Models\CoffeeGrade;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redirect;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\HarvestBatchesExport;
 use App\Models\InventoryLocation;
 use App\Models\InventoryTransaction;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\HarvestBatchesExport;
 
 class HarvestBatchController extends Controller
 {
+    /**
+     * Dashboard view
+     */
+    public function dashboard()
+    {
+        $harvestBatches = HarvestBatch::with('coffeeGrade')->get();
+        return view('dashboard', compact('harvestBatches'));
+    }
+
     /**
      * Export all batches to Excel
      */
@@ -148,15 +156,6 @@ class HarvestBatchController extends Controller
     }
 
     /**
-     * Dashboard view
-     */
-    public function dashboard()
-    {
-        $harvestBatches = HarvestBatch::with('coffeeGrade')->get();
-        return view('dashboard', compact('harvestBatches'));
-    }
-
-    /**
      * Analytics view
      */
     public function analytics()
@@ -167,7 +166,7 @@ class HarvestBatchController extends Controller
         $statusCounts = HarvestBatch::select('status', DB::raw('COUNT(*) as count'))
                                     ->groupBy('status')->get();
 
-        $monthlyHarvests = HarvestBatch::selectRaw('DATE_FORMAT(harvest_date, "%M %Y") as month, COUNT(*) as count')
+        $monthlyHarvests = HarvestBatch::selectRaw('DATE_FORMAT(harvest_date, \"%M %Y\") as month, COUNT(*) as count')
                                        ->groupBy('month')
                                        ->orderByRaw('MIN(harvest_date)')
                                        ->get();

@@ -2,38 +2,35 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller; // ✅ Required for middleware support
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('guest')->except('logout'); // ✅ Applies guest middleware correctly
-    }
-
     /**
-     * Show the login form.
-     */
-    public function showLoginForm()
-    {
-        return view('auth.login'); // Make sure this view exists
-    }
-
-    /**
-     * Handle login submission.
+     * Handle login form submission.
      */
     public function login(Request $request)
     {
+        // Validate input
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        // Attempt login
         $credentials = $request->only('email', 'password');
+        $remember = $request->has('remember');
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-
-            
-            return redirect()->intended('/dashboard')
-                 ->with('success', 'You have logged in successfully!');
+           if (Auth::attempt($credentials, $remember)) {
+            // Redirect to dashboard or home
+            return redirect()->intended('/dashboard');
         }
+
+        // Failed login
+        return back()->withErrors([
+            'email' => 'Invalid email or password.',
+        ])->withInput();
     }
 }
